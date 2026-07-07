@@ -10,6 +10,9 @@ from datetime import datetime, timedelta
 import os
 import requests
 import tensorflow as tf
+import streamlit.components.v1 as components
+from deepchecks.tabular import Dataset
+from deepchecks.tabular.suites import data_integrity
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
@@ -179,8 +182,12 @@ if not live_ok:
 st.markdown(f"**Status Informasi Berjalan:** Database Historis: `{first_date.strftime('%d/%m/%Y')}` s.d `{last_date.strftime('%d/%m/%Y')}` | Live API Rate Real-time: `Rp {live_rate:,.2f}`")
 st.divider()
 
-# Pembagian Tab sesuai Ketentuan Tugas Standar HKI Komprehensif
-tab_main, tab_eval = st.tabs(["🔮 [MENU 1] MODEL ALUR UTAMA (INPUT - PROSES - OUTPUT)", "📊 [MENU 2] VALIDASI & EVALUASI MODEL SAINTIFIK"])
+# Pembagian Tab (3 Tab sekaligus)
+tab_main, tab_eval, tab_deepchecks = st.tabs([
+    "🔮 [MENU 1] MODEL ALUR UTAMA (INPUT - PROSES - OUTPUT)", 
+    "📊 [MENU 2] VALIDASI & EVALUASI MODEL SAINTIFIK",
+    "🔍 [MENU 3] DEEPCHECKS DATA INTEGRITY"
+])
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -244,30 +251,25 @@ with tab_main:
     # --------------------------------------------------------------------------
     st.markdown("### 📤 B. TAHAP OUTPUT SYSTEM: Hasil Estimasi & Visualisasi Data Terpadu")
     
-       with st.spinner("Sistem sedang memproses algoritma dan merender grafik..."):
-        # 8 spasi
+    with st.spinner("Sistem sedang memproses algoritma dan merender grafik..."):
+        # Filter data historis berdasarkan pilihan rentang user
         df_filtered_hist = df_raw[(df_raw["Date"].dt.date >= start_user) & (df_raw["Date"].dt.date <= end_user)].sort_values("Date")
         
-        # 8 spasi
+        # Antisipasi jika rentang pilihan murni masa depan
         if df_filtered_hist.empty:
-            # 12 spasi
             df_filtered_hist = df_raw.tail(30)
             
-        # 8 spasi
+        # Jalankan mesin prediksi jika tanggal target melampaui hari ini
         dates_pred, preds_out = [], []
         if end_user > today_date:
-            # 12 spasi
             dates_pred, preds_out = run_forecast(end_user, live_rate)
-            # 12 spasi
-            # Potong output agar presisi masuk dalam koridor range kalender user
+            # Potong output agar presisi masuk dalam koridor range kalender user (menggunakan .date())
             pred_pairs = [(d, p) for d, p in zip(dates_pred, preds_out) if start_user <= d.date() <= end_user]
             if pred_pairs:
-                # 16 spasi
                 dates_pred_filtered, preds_filtered = zip(*pred_pairs)
                 dates_pred = list(dates_pred_filtered)
                 preds_out = list(preds_filtered)
             else:
-                # 16 spasi
                 dates_pred, preds_out = [], []
 
         # Ringkasan Angka Output Berbentuk Blok Metrik Informasi Informasi Penting
@@ -377,3 +379,37 @@ with tab_eval:
     st.pyplot(fig_ev)
     
     st.success(f"✔ **Kesimpulan Evaluasi Keandalan:** Grafik evaluasi menunjukkan tingkat kerapatan yang sangat tinggi antara kurva aktual dan prediksi dengan Akurasi mencapai **{model_acc:.2f}%**. Hal ini secara formal membuktikan algoritma program komputer layak didaftarkan HKI karena memiliki tingkat akurasi yang valid.")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# TAB 3: MENU UJI INTEGRITAS DATA DEEPCHECKS (INSTRUMEN HKI)
+# ══════════════════════════════════════════════════════════════════════════════
+with tab_deepchecks:
+    st.subheader("Uji Integritas Data dengan Deepchecks Suite")
+    st.write("Suite ini mendeteksi duplikasi, outlier, kebocoran data, dll. pada dataset utama.")
+    
+    if st.button("Jalankan Deepchecks Suite", key="run_deepchecks"):
+        with st.spinner("Menganalisis dataset..."):
+            # Konversi dataset ke Deepchecks Dataset
+            ds = Dataset(df, features=FEATURE_COLS, index_name="Date")
+            suite = data_integrity()
+            result = suite.run(ds)
+            
+            # Simpan hasil laporan ke HTML
+            report_filename = "deepchecks_data_integrity_report.html"
+            result.save_as_html(report_filename)
+            
+            # Baca file HTML yang baru saja disimpan
+            with open(report_filename, "r", encoding="utf-8") as f:
+                html_bytes = f.read()
+                
+            st.success("✔ Deepchecks Analysis selesai diproses!")
+            
+            # Sediakan Tombol Unduh Laporan Visual Interaktif
+            st.download_button(
+                label="📥 Unduh & Buka Laporan Deepchecks (HTML)",
+                data=html_bytes,
+                file_name=report_filename,
+                mime="text/html",
+                use_container_width=True
+            )
