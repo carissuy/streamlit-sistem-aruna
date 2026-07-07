@@ -6,3 +6,4 @@ seaborn
 tensorflow-cpu
 deepchecks
 requests
+setuptools
