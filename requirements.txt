@@ -4,6 +4,4 @@ scikit-learn
 matplotlib
 seaborn
 tensorflow-cpu
-deepchecks
 requests
-setuptools
