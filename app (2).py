@@ -244,25 +244,30 @@ with tab_main:
     # --------------------------------------------------------------------------
     st.markdown("### 📤 B. TAHAP OUTPUT SYSTEM: Hasil Estimasi & Visualisasi Data Terpadu")
     
-    with st.spinner("Sistem sedang memproses algoritma dan merender grafik..."):
-        # Filter data historis berdasarkan pilihan rentang user
+       with st.spinner("Sistem sedang memproses algoritma dan merender grafik..."):
+        # 8 spasi
         df_filtered_hist = df_raw[(df_raw["Date"].dt.date >= start_user) & (df_raw["Date"].dt.date <= end_user)].sort_values("Date")
         
-        # Antisipasi jika rentang pilihan murni masa depan
+        # 8 spasi
         if df_filtered_hist.empty:
+            # 12 spasi
             df_filtered_hist = df_raw.tail(30)
             
-        # Jalankan mesin prediksi jika tanggal target melampaui hari ini
+        # 8 spasi
         dates_pred, preds_out = [], []
-                if end_user > today_date:
+        if end_user > today_date:
+            # 12 spasi
             dates_pred, preds_out = run_forecast(end_user, live_rate)
+            # 12 spasi
             # Potong output agar presisi masuk dalam koridor range kalender user
             pred_pairs = [(d, p) for d, p in zip(dates_pred, preds_out) if start_user <= d.date() <= end_user]
             if pred_pairs:
+                # 16 spasi
                 dates_pred_filtered, preds_filtered = zip(*pred_pairs)
                 dates_pred = list(dates_pred_filtered)
                 preds_out = list(preds_filtered)
             else:
+                # 16 spasi
                 dates_pred, preds_out = [], []
 
         # Ringkasan Angka Output Berbentuk Blok Metrik Informasi Informasi Penting
