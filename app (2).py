@@ -254,10 +254,10 @@ with tab_main:
             
         # Jalankan mesin prediksi jika tanggal target melampaui hari ini
         dates_pred, preds_out = [], []
-        if end_user > today_date:
+                if end_user > today_date:
             dates_pred, preds_out = run_forecast(end_user, live_rate)
             # Potong output agar presisi masuk dalam koridor range kalender user
-                pred_pairs = [(d, p) for d, p in zip(dates_pred, preds_out) if start_user <= d.date() <= end_user]
+            pred_pairs = [(d, p) for d, p in zip(dates_pred, preds_out) if start_user <= d.date() <= end_user]
             if pred_pairs:
                 dates_pred_filtered, preds_filtered = zip(*pred_pairs)
                 dates_pred = list(dates_pred_filtered)
